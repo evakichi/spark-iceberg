@@ -1,0 +1,37 @@
+services:
+  spark:
+    container_name: spark
+    hostname: spark
+    build: ./spark
+    networks:
+      - spark-iceberg-minio-network
+    ports:
+      - 4040:4040
+    tty: true
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+      - TZ=Asia/Tokyo
+    depends_on:
+      - minio
+
+  minio:
+    container_name: minio
+    hostname: minio
+    build: ./minio
+    networks:
+      - spark-iceberg-minio-network
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password
+      - MINIO_DOMAIN=minio
+      - TZ=Asia/Tokyo
+    tty: true
+    ports:
+      - 9000:9000
+      - 9001:9001
+    command: ["server", "/data", "--console-address", ":9001"]
+
+networks:
+  spark-iceberg-minio-network:
