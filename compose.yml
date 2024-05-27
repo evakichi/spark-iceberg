@@ -11,27 +11,49 @@ services:
     environment:
       - AWS_ACCESS_KEY_ID=admin
       - AWS_SECRET_ACCESS_KEY=password
+      - AWS_S3_ENDPOINT=minio:9000
       - AWS_REGION=us-east-1
       - TZ=Asia/Tokyo
     depends_on:
-      - minio
+      - s3
 
-  minio:
-    container_name: minio
-    hostname: minio
+  s3:
+    container_name: s3
+    hostname: s3
     build: ./minio
     networks:
       - spark-iceberg-minio-network
     environment:
       - MINIO_ROOT_USER=admin
       - MINIO_ROOT_PASSWORD=password
-      - MINIO_DOMAIN=minio
       - TZ=Asia/Tokyo
+    volumes:
+      - minio-volume:/data/
     tty: true
     ports:
       - 9000:9000
       - 9001:9001
     command: ["server", "/data", "--console-address", ":9001"]
+    depends_on:
+      - db
+
+  db:
+    image: postgres:latest
+    container_name: db
+    hostname: db
+    networks:
+      - spark-iceberg-minio-network
+    volumes:
+      - db-store:/var/lib/postgresql/data
+    tty: true
+    environment:
+      - TZ=Asia/Tokyo
+      - POSTGRES_USER=iceberg
+      - POSTGRES_PASSWORD=icebergpassword    
 
 networks:
   spark-iceberg-minio-network:
+
+volumes:
+  db-store:
+  minio-volume:
